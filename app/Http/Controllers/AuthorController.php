@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Author;
 use Illuminate\Support\Facades\Validator;
+use PhpParser\Node\Stmt\TryCatch;
 
-class AuthorsController extends Controller
+class AuthorController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -20,13 +21,19 @@ class AuthorsController extends Controller
     }
 
 
-    public function show($id)
+    public function SingleAuthor($id)
     {
-        $author = Author::findOrFail($id);
-        return response()->json($author, 200);
+        try {
+            $author = Author::findOrFail($id);
+
+            return response()->json($author, 200);
+        } catch (\Exception $e) {
+            return response()->json("Author not found", 404);
+        }
     }
 
-   
+
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -48,30 +55,40 @@ class AuthorsController extends Controller
 
     public function update(Request $request, $id)
     {
-        $author = Author::findOrFail($id);
+        try {
+            $author = Author::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'string|max:255',
-            'email' => 'email|unique:authors,email,' . $author->id,
-            'password' => 'string|min:8',
-        ]);
+            $validator = Validator::make($request->all(), [
+                'name' => 'string|max:255',
+                'email' => 'email|unique:authors,email,' . $author->id,
+                'password' => 'string|min:8',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 400);
+            }
+
+            $author->update($request->only([
+                'name', 'email', 'password'
+            ]));
+
+            return response()->json($author, 200);
+        } catch (\Exception $e) {
+            // Handle any exceptions
+            return response()->json(['message' => 'Error occurred while updating author'], 500);
         }
-
-        $author->update($request->only([
-            'name', 'email', 'password'
-        ]));
-
-        return response()->json($author, 200);
     }
 
 
     public function destroy($id)
     {
-        $author = Author::findOrFail($id);
+        try {
+            $author = Author::findOrFail($id);
         $author->delete();
         return response()->json(null, 204);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => 'Error occurred while deleting author'], 500);
+
+        }
     }
 }

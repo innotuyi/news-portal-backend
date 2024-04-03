@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
-  
+
     public function index()
     {
         $categories = Category::all();
@@ -18,11 +18,15 @@ class CategoryController extends Controller
 
     public function show($id)
     {
-        $category = Category::findOrFail($id);
-        return response()->json($category, 200);
+        try {
+            $category = Category::findOrFail($id);
+            return response()->json($category, 200);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => 'no category found'], 500);
+        }
     }
 
-  
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -42,27 +46,36 @@ class CategoryController extends Controller
 
     public function update(Request $request, $id)
     {
-        $category = Category::findOrFail($id);
+        try {
+            $category = Category::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-        ]);
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+            ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 400);
+            }
+
+            $category->update($request->only([
+                'name'
+            ]));
+
+            return response()->json($category, 200);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => 'error occured during update'], 404);
         }
-
-        $category->update($request->only([
-            'name'
-        ]));
-
-        return response()->json($category, 200);
     }
 
     public function destroy($id)
     {
-        $category = Category::findOrFail($id);
-        $category->delete();
-        return response()->json(null, 204);
+
+        try {
+            $category = Category::findOrFail($id);
+            $category->delete();
+            return response()->json(null, 204);
+        } catch (\Throwable $th) {
+            return response()->json(['message' => 'error occured during deletion'], 404);
+        }
     }
 }

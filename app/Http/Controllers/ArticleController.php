@@ -18,31 +18,41 @@ class ArticleController extends Controller
 
     public function show($slug)
     {
-        $article = Article::where('slug', $slug)->firstOrFail();
-        return response()->json($article);
+        try {
+            $article = Article::join('categories', 'categories.id', '=', 'articles.categoryID')
+                   ->join('authors', 'authors.id', '=', 'articles.authorID')
+                   ->select('articles.*', 'categories.name as category_name', 'authors.name as author_name')
+                   ->where('articles.slug', $slug)
+                   ->firstOrFail();
+
+            return response()->json($article);
+        } catch (\Exception $e) {
+            return response()->json("Article not found", 404);
+        }
     }
+
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'status' => 'required|boolean',
-            'category_id' => 'required|exists:categories,id',
-            'author_id' => 'required|exists:authors,id',
+            // 'status' => 'required|boolean',
+            'categoryID' => 'required|exists:categories,id',
+            'authorID' => 'required|exists:authors,id',
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json($validator->errors(), 400);
         }
-    
+
         $slug = Str::slug($request->title);
-    
+
         $article = Article::create(array_merge($request->all(), ['slug' => $slug]));
-    
+
         return response()->json($article, 201);
     }
-    
+
     public function update(Request $request, $slug)
     {
         $validator = Validator::make($request->all(), [
@@ -72,12 +82,19 @@ class ArticleController extends Controller
 
     public function getArticlesByCategory($category)
     {
-        // Fetch articles by joining the articles, categories, and authors tables
-        $articles = Article::select('articles.*')
-            ->join('categories', 'articles.categoryID', '=', 'categories.id')
-            ->where('categories.name', $category)
-            ->get();
+        try {
+            $article = Article::join('categories', 'categories.id', '=', 'articles.categoryID')
+                   ->join('authors', 'authors.id', '=', 'articles.authorID')
+                   ->select('articles.*', 'categories.name as category_name', 'authors.name as author_name')
+                   ->where('articles.categoryID', $category)
+                   ->firstOrFail();
 
-        return response()->json($articles, 200);
+                   return response()->json($article);
+
+        } catch (\Throwable $th) {
+                              return response()->json("article not found");
+
+        }
+
     }
 }

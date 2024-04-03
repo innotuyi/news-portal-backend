@@ -8,14 +8,14 @@ use Illuminate\Support\Facades\Validator;
 
 class CommentController extends Controller
 {
- 
+
     public function index($article_id)
     {
         $comments = Comment::where('articleID', $article_id)->get();
         return response()->json($comments, 200);
     }
 
-   
+
     public function store(Request $request, $article_id)
     {
         $validator = Validator::make($request->all(), [
@@ -40,11 +40,21 @@ class CommentController extends Controller
         return response()->json($comment, 201);
     }
 
-   
+
     public function destroy($id)
     {
-        $comment = Comment::findOrFail($id);
-        $comment->delete();
-        return response()->json(null, 204);
+        try {
+            $comment = Comment::findOrFail($id);
+
+            if (!$comment) {
+                return response()->json(["message" => "error occured during deletion"], 204);
+            }
+
+            $comment->delete();
+
+            return response()->json(null, 204);
+        } catch (\Throwable $th) {
+            return response()->json("error occured during deletion", 204);
+        }
     }
 }
