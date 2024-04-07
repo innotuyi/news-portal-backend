@@ -12,7 +12,12 @@ class ArticleController extends Controller
 {
     public function index()
     {
-        $articles = Article::all();
+        $articles = Article::join('categories', 'categories.id', '=', 'articles.categoryID')
+        ->join('authors', 'authors.id', '=', 'articles.authorID')
+        ->select('articles.*', 'categories.name as category_name', 'authors.name as author_name')
+        ->orderBy('articles.created_at', 'desc')
+        ->get();
+
         return response()->json($articles);
     }
 
@@ -20,10 +25,10 @@ class ArticleController extends Controller
     {
         try {
             $article = Article::join('categories', 'categories.id', '=', 'articles.categoryID')
-                   ->join('authors', 'authors.id', '=', 'articles.authorID')
-                   ->select('articles.*', 'categories.name as category_name', 'authors.name as author_name')
-                   ->where('articles.slug', $slug)
-                   ->firstOrFail();
+                ->join('authors', 'authors.id', '=', 'articles.authorID')
+                ->select('articles.*', 'categories.name as category_name', 'authors.name as author_name')
+                ->where('articles.slug', $slug)
+                ->firstOrFail();
 
             return response()->json($article);
         } catch (\Exception $e) {
@@ -84,17 +89,14 @@ class ArticleController extends Controller
     {
         try {
             $article = Article::join('categories', 'categories.id', '=', 'articles.categoryID')
-                   ->join('authors', 'authors.id', '=', 'articles.authorID')
-                   ->select('articles.*', 'categories.name as category_name', 'authors.name as author_name')
-                   ->where('articles.categoryID', $category)
-                   ->firstOrFail();
+                ->join('authors', 'authors.id', '=', 'articles.authorID')
+                ->select('articles.*', 'categories.name as category_name', 'authors.name as author_name')
+                ->where('articles.categoryID', $category)
+                ->firstOrFail();
 
-                   return response()->json($article);
-
+            return response()->json($article);
         } catch (\Throwable $th) {
-                              return response()->json("article not found");
-
+            return response()->json("article not found");
         }
-
     }
 }
